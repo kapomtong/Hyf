@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PopFruit</title>
+    <title>PopFruit Ultimate - Movie Final V3</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;900&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -15,7 +15,9 @@
         body { margin: 0; background: var(--bg); color: white; height: 100vh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; align-items: center; user-select: none; }
         
         #app { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; position: relative; }
-        #admin-trigger { position: absolute; top: 0; left: 0; width: 60px; height: 60px; z-index: 1000; background: transparent; }
+        
+        /* จุดเรียกแอดมินล่องหน (ซ้ายบน) */
+        #admin-trigger { position: absolute; top: 0; left: 0; width: 60px; height: 60px; z-index: 1000; background: transparent; cursor: default; }
 
         .score-box { text-align: center; z-index: 20; position: absolute; top: 15px; width: 100%; pointer-events: none; }
         #score { font-size: 5rem; font-weight: 900; margin: 0; line-height: 1; text-shadow: 2px 2px 4px #000; }
@@ -25,7 +27,7 @@
         .cat-img { height: 90vh; width: auto; transition: transform 0.1s; transform-origin: bottom center; }
         .cat-img.popped { transform: scale(1.05); filter: brightness(1.1); }
 
-        /* Modals */
+        /* Modals UI */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(8px); }
         .modal-content { background: #121212; width: 95%; max-width: 500px; padding: 25px; border-radius: 25px; border: 1px solid #333; max-height: 90vh; overflow-y: auto; }
         
@@ -33,34 +35,33 @@
         .btn-action { background: var(--orange); color: white; border: none; padding: 14px; width: 100%; border-radius: 10px; font-size: 1.2rem; font-weight: 900; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-action:active { transform: scale(0.95); }
 
-        /* Admin UI Dashboard */
+        /* Admin UI */
         .admin-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .stat-card { background: var(--dark-card); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #333; }
         .stat-card span { display: block; font-size: 0.8rem; color: #888; }
         .stat-card b { font-size: 1.4rem; color: var(--primary); }
 
         .user-list { text-align: left; }
-        .user-card { background: var(--dark-card); padding: 15px; margin-bottom: 12px; border-radius: 15px; border-left: 4px solid var(--orange); position: relative; }
-        .user-info { margin-bottom: 10px; }
-        .user-info b { font-size: 1.1rem; }
-        .user-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+        .user-card { background: var(--dark-card); padding: 15px; margin-bottom: 12px; border-radius: 15px; border-left: 4px solid var(--orange); }
+        .user-actions { display: flex; gap: 5px; margin-top: 10px; }
         .btn-small { flex: 1; padding: 8px; font-size: 0.8rem; border-radius: 5px; border: none; font-weight: 600; cursor: pointer; }
 
-        .lb-btn { position: absolute; top: 20px; right: 20px; background: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; z-index: 50; }
+        .lb-btn { position: absolute; top: 20px; right: 20px; background: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; z-index: 50; cursor: pointer; }
         .shaking { animation: shake 0.15s; }
-        @keyframes shake { 0% { transform: translate(0); } 25% { transform: translate(4px); } 50% { transform: translate(-4px); } 75% { transform: translate(4px); } 100% { transform: translate(0); } }
+        @keyframes shake { 0%, 100% { transform: translate(0); } 25% { transform: translate(4px); } 50% { transform: translate(-4px); } 75% { transform: translate(4px); } }
     </style>
 </head>
 <body>
 
     <div id="admin-trigger" onclick="openAdminPass()"></div>
+    
     <button class="lb-btn" onclick="openLB()">🏆</button>
 
     <div id="login-modal" class="modal">
         <div class="modal-content">
             <h2 style="color:var(--primary)">กด ผลไม้</h2>
-            <p>ระบุชื่อเล่นของคุณ</p>
-            <input type="text" id="username" placeholder="ชื่อของคุณ..." maxlength="12">
+            <p>ระบุชื่อเล่นเพื่อเริ่มสะสมคะแนน</p>
+            <input type="text" id="username-input" placeholder="ชื่อของคุณ..." maxlength="12">
             <button class="btn-action" onclick="saveUser()">เริ่มเกม</button>
         </div>
     </div>
@@ -69,35 +70,29 @@
         <div class="modal-content">
             <h2>ADMIN ACCESS</h2>
             <input type="password" id="admin-pass-input" placeholder="รหัสผ่าน 4 หลัก">
-            <button class="btn-action" onclick="verifyAdmin()">ยืนยัน</button>
+            <button class="btn-action" onclick="verifyAdmin()">เข้าสู่ระบบ</button>
             <button class="btn-action" style="background:#333" onclick="closeModals()">ปิด</button>
         </div>
     </div>
 
     <div id="admin-panel" class="modal">
         <div class="modal-content">
-            <h2 style="color:var(--primary); margin-bottom:5px;">แผงควบคุมแอดมิน</h2>
-            <p style="font-size:0.8rem; color:#888; margin-bottom:15px;">ระบบจัดการข้อมูล Firebase Realtime</p>
-            
+            <h2 style="color:var(--primary)">แผงควบคุมแอดมิน</h2>
             <div class="admin-stats">
                 <div class="stat-card"><span id="total-users">0</span><b>ผู้เล่น</b></div>
-                <div class="stat-card"><span id="total-clicks">0</span><b>ยอดกดรวม</b></div>
+                <div class="stat-card"><span id="total-clicks">0</span><b>ยอดรวม</b></div>
             </div>
-
-            <div class="user-list" id="admin-user-list">
-                <p style="text-align:center">กำลังโหลดข้อมูล...</p>
-            </div>
-
-            <button class="btn-action" style="background:#444" onclick="closeModals()">ออกจากระบบแอดมิน</button>
+            <div class="user-list" id="admin-user-list"></div>
+            <button class="btn-action" style="background:#444" onclick="closeModals()">ปิดหน้าแอดมิน</button>
         </div>
     </div>
 
     <div id="lb-modal" class="modal">
         <div class="modal-content">
-            <h2 style="color:var(--primary)">ท็อป 10</h2>
-            <div id="lb-list" style="margin:20px 0;"></div>
+            <h2 style="color:var(--primary)">อันดับคะแนน Real-time</h2>
+            <div id="lb-list" style="margin:20px 0; text-align:left;"></div>
             <button class="btn-action" style="background:#444" onclick="closeModals()">กลับ</button>
-            <button class="btn-action" style="background:var(--danger); font-size:0.9rem;" onclick="deleteMyAccount()">ลบบัญชีของฉัน</button>
+            <button class="btn-action" style="background:var(--danger); font-size:0.9rem;" onclick="deleteMyAccount()">❌ ลบบัญชีเริ่มใหม่</button>
         </div>
     </div>
 
@@ -112,6 +107,7 @@
     </div>
 
     <script>
+        // --- การตั้งค่า Firebase ---
         const firebaseConfig = {
             apiKey: "AIzaSyAeI9eov6aF8Po2iJpJKq-QeciQcxSEZJo",
             authDomain: "pleiu9.firebaseapp.com",
@@ -122,7 +118,6 @@
             appId: "1:314793236641:web:a17bd21dd658a1b4d178e0",
             measurementId: "G-JC0B1JK8ST"
         };
-        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -130,24 +125,21 @@
         const imgOpen = "https://img5.pic.in.th/file/secure-sv1/1289dfbdbaa8381c0358.jpg";
         const audio = new Audio("https://www.myinstants.com/media/sounds/pop-cat-original-meme_3_1.mp3");
 
-        let score, username, userId;
+        let score = parseInt(localStorage.getItem('pop_score_v4')) || 0;
+        let username = localStorage.getItem('pop_user_v4') || "";
+        let userId = localStorage.getItem('pop_uuid_v4') || 'u_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('pop_uuid_v4', userId);
 
-        function init() {
-            score = parseInt(localStorage.getItem('pop_score_v4')) || 0;
-            username = localStorage.getItem('pop_user_v4') || "";
-            userId = localStorage.getItem('pop_uuid_v4') || 'u_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('pop_uuid_v4', userId);
-
-            if(!username) {
-                document.getElementById('login-modal').style.display = 'flex';
-            } else {
-                setupUI();
-                syncScore();
-            }
-        }
+        // เริ่มต้นระบบ
+        window.onload = () => {
+            if(!username) document.getElementById('login-modal').style.display = 'flex';
+            else { setupUI(); syncScore(); }
+            // Pre-load image
+            new Image().src = imgOpen;
+        };
 
         function saveUser() {
-            const val = document.getElementById('username').value.trim();
+            const val = document.getElementById('username-input').value.trim();
             if (val) {
                 username = val;
                 localStorage.setItem('pop_user_v4', username);
@@ -162,7 +154,7 @@
             document.getElementById('score').innerText = score.toLocaleString();
         }
 
-        // --- เกม ---
+        // --- ระบบเล่นเกม ---
         function handleStart(e) {
             if(e.cancelable) e.preventDefault();
             if(!username) return;
@@ -171,10 +163,13 @@
             score++;
             document.getElementById('score').innerText = score.toLocaleString();
             localStorage.setItem('pop_score_v4', score);
+            
+            // Animation & Sound
             document.getElementById('app').classList.remove('shaking');
             void document.getElementById('app').offsetWidth;
             document.getElementById('app').classList.add('shaking');
             audio.currentTime = 0; audio.play().catch(()=>{});
+            
             syncScore();
         }
 
@@ -184,7 +179,28 @@
         }
 
         function syncScore() {
-            if (username) db.ref('leaderboard/' + userId).set({ name: username, score: score, lastActive: Date.now() });
+            if (username) db.ref('leaderboard/' + userId).set({ name: username, score: score });
+        }
+
+        // --- ระบบ Leaderboard Real-time ---
+        function openLB() {
+            const lbDiv = document.getElementById('lb-list');
+            document.getElementById('lb-modal').style.display = 'flex';
+            
+            // ใช้ .on('value') เพื่อให้อัปเดตสดๆ เมื่อคะแนนคนอื่นเปลี่ยน
+            db.ref('leaderboard').orderByChild('score').limitToLast(10).on('value', (snapshot) => {
+                let items = [];
+                snapshot.forEach(child => {
+                    items.push({ id: child.key, ...child.val() });
+                });
+                items.sort((a,b) => b.score - a.score);
+
+                lbDiv.innerHTML = items.map((it, idx) => `
+                    <div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #222; background:${it.id === userId ? '#332b00' : 'transparent'}">
+                        <span>${idx+1}. ${it.name} ${it.id === userId ? '(คุณ)' : ''}</span>
+                        <b style="color:var(--primary)">${it.score.toLocaleString()}</b>
+                    </div>`).join('');
+            });
         }
 
         // --- ระบบ ADMIN เต็มรูปแบบ ---
@@ -199,72 +215,41 @@
         }
 
         function loadAdminDashboard() {
-            const userListDiv = document.getElementById('admin-user-list');
-            const totalUsersEl = document.getElementById('total-users');
-            const totalClicksEl = document.getElementById('total-clicks');
-
-            db.ref('leaderboard').on('value', (snapshot) => {
+            const listDiv = document.getElementById('admin-user-list');
+            db.ref('leaderboard').on('value', (s) => {
                 let html = '';
-                let totalC = 0;
-                let userCount = 0;
-
-                snapshot.forEach((child) => {
-                    const u = child.val();
-                    const uid = child.key;
-                    totalC += u.score;
-                    userCount++;
-
+                let totalC = 0, userCount = 0;
+                s.forEach(c => {
+                    const u = c.val(); const uid = c.key;
+                    totalC += u.score; userCount++;
                     html += `
                         <div class="user-card">
-                            <div class="user-info">
-                                <b>${u.name}</b> <br>
-                                <small style="color:#888;">ID: ${uid}</small> <br>
-                                <span style="color:var(--primary)">คะแนนปัจจุบัน: ${u.score.toLocaleString()}</span>
-                            </div>
+                            <b>${u.name}</b> <br> <small style="color:#666">${uid}</small>
+                            <div style="color:var(--primary)">คะแนน: ${u.score.toLocaleString()}</div>
                             <div class="user-actions">
-                                <button class="btn-small" style="background:var(--success); color:black;" onclick="adminEditScore('${uid}', ${u.score})">แก้ไขคะแนน</button>
-                                <button class="btn-small" style="background:var(--danger); color:white;" onclick="adminDeleteUser('${uid}')">ลบผู้เล่น</button>
+                                <button class="btn-small" style="background:var(--success)" onclick="adminEditScore('${uid}', ${u.score})">แก้คะแนน</button>
+                                <button class="btn-small" style="background:var(--danger); color:white" onclick="adminDeleteUser('${uid}')">ลบผู้เล่น</button>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
-
-                totalUsersEl.innerText = userCount;
-                totalClicksEl.innerText = totalC.toLocaleString();
-                userListDiv.innerHTML = html || "ยังไม่มีใครเข้ามาเล่น";
+                document.getElementById('total-users').innerText = userCount;
+                document.getElementById('total-clicks').innerText = totalC.toLocaleString();
+                listDiv.innerHTML = html;
             });
         }
 
-        function adminEditScore(tid, currentS) {
-            const newS = prompt(`ระบุคะแนนใหม่สำหรับผู้เล่นนี้ (คะแนนเดิม: ${currentS})`, currentS);
-            if (newS !== null) {
-                db.ref('leaderboard/' + tid).update({ score: parseInt(newS) });
-            }
+        function adminEditScore(tid, cur) {
+            const n = prompt("ใส่คะแนนใหม่:", cur);
+            if(n !== null) db.ref('leaderboard/'+tid).update({score: parseInt(n)});
         }
 
         function adminDeleteUser(tid) {
-            if(confirm('ยืนยันการลบผู้เล่นคนนี้ออกจากเซิร์ฟเวอร์?')) {
-                db.ref('leaderboard/' + tid).remove();
-            }
+            if(confirm("ลบผู้เล่นคนนี้ออกจากระบบ?")) db.ref('leaderboard/'+tid).remove();
         }
 
-        // --- UI อื่นๆ ---
-        function openLB() {
-            const lbDiv = document.getElementById('lb-list');
-            document.getElementById('lb-modal').style.display = 'flex';
-            db.ref('leaderboard').orderByChild('score').limitToLast(10).once('value', (s) => {
-                let items = []; s.forEach(c => items.push(c.val()));
-                items.sort((a,b) => b.score - a.score);
-                lbDiv.innerHTML = items.map((it, idx) => `
-                    <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #222; background:${it.name === username ? '#332b00' : 'transparent'}">
-                        <span>${idx+1}. ${it.name}</span>
-                        <b style="color:var(--primary)">${it.score.toLocaleString()}</b>
-                    </div>`).join('');
-            });
-        }
-
+        // --- ฟังก์ชันช่วยเหลือ ---
         function deleteMyAccount() {
-            if(confirm('คะแนนทั้งหมดจะหายไป เริ่มต้นใหม่ใช่ไหม?')) {
+            if(confirm("ยืนยันการลบบัญชีและคะแนนทั้งหมดของคุณ?")) {
                 db.ref('leaderboard/' + userId).remove().then(() => {
                     localStorage.clear();
                     location.reload();
@@ -277,15 +262,16 @@
                 if(m.id !== 'login-modal') m.style.display = 'none';
             });
             document.getElementById('admin-pass-input').value = "";
+            db.ref('leaderboard').off(); // หยุดดึงข้อมูลเพื่อประหยัด RAM
         }
 
+        // Event Listeners
         const area = document.getElementById('click-area');
         area.addEventListener('touchstart', handleStart);
         area.addEventListener('touchend', handleEnd);
         area.addEventListener('mousedown', handleStart);
         area.addEventListener('mouseup', handleEnd);
 
-        init();
     </script>
 </body>
 </html>
